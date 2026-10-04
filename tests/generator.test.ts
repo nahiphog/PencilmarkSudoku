@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { parseGrid, gridToString } from '../src/engine/board';
 import { countSolutions, solve } from '../src/engine/bruteForce';
 import {
+  generateFullGrid,
   generatePuzzle,
   isMinimal,
   hasSymmetry,
@@ -24,6 +25,19 @@ import { LEVELS, TECHS, Tech } from '../src/engine/ratings';
 import { applyIsomorphism, randomIsomorphism, transformPuzzle, IDENTITY } from '../src/engine/transform';
 
 describe('digging', () => {
+  it('generates a completed valid Sudoku grid', () => {
+    const grid = generateFullGrid();
+    const values = gridToString(grid);
+
+    expect(values).toMatch(/^[1-9]{81}$/);
+    for (let unit = 0; unit < 9; unit++) {
+      const row = values.slice(unit * 9, unit * 9 + 9);
+      const column = Array.from({ length: 9 }, (_, row) => values[row * 9 + unit]).join('');
+      expect(new Set(row).size).toBe(9);
+      expect(new Set(column).size).toBe(9);
+    }
+  });
+
   it('leaves a proper puzzle in which every clue is needed', () => {
     for (let i = 0; i < 12; i++) {
       const g = generatePuzzle('none');

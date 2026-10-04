@@ -20,6 +20,7 @@ type Dictionary = Record<string, string>;
 const nb: Dictionary = {
   // menu
   New: 'Ny',
+  'Solved grid': 'Løst rutenett',
   Practice: 'Øv',
   Import: 'Importer',
   Share: 'Del',
@@ -68,6 +69,7 @@ const nb: Dictionary = {
 
 const es: Dictionary = {
   New: 'Nuevo',
+  'Solved grid': 'Cuadrícula resuelta',
   Practice: 'Practicar',
   Import: 'Importar',
   Share: 'Compartir',
