@@ -335,7 +335,7 @@ function SimulationPage() {
   const [status, setStatus] = useState('Choose a trial count and a maximum number of pencilmarked cells.');
   const haltRequested = useRef(false);
 
-  const bins = Array.from({ length: maximumPencilmarked + 1 }, (_, index) => index);
+  const bins = Object.keys(histogram).map(Number).sort((a, b) => a - b);
   const largestBin = Math.max(1, ...bins.map((count) => histogram[count] ?? 0));
   const averageMilliseconds = acceptedCount === 0 ? 0 : totalAcceptedMilliseconds / acceptedCount;
 
@@ -357,6 +357,7 @@ function SimulationPage() {
         const counts: Record<number, number> = {};
         const matches: SimulationFinalGrid[] = [];
         let completedTrials = 0;
+        let flushedMatches = 0;
         const yieldEvery = trialLimit <= 1000 ? 1 : 10;
 
         for (let trial = 1; trial <= trialLimit; trial++) {
@@ -365,28 +366,34 @@ function SimulationPage() {
           const generated = generateSimulationTrial();
           const elapsed = performance.now() - startedAt;
           completedTrials = trial;
+          counts[generated.pencilmarkedCells] = (counts[generated.pencilmarkedCells] ?? 0) + 1;
 
           if (generated.pencilmarkedCells <= maximumPencilmarked) {
             accepted++;
             acceptedMilliseconds += elapsed;
-            counts[generated.pencilmarkedCells] = (counts[generated.pencilmarkedCells] ?? 0) + 1;
             matches.push(generated);
           }
 
           if (trial % yieldEvery === 0 || trial === trialLimit) {
+            const newMatches = matches.slice(flushedMatches);
             setTrialsProcessed(trial);
             setAcceptedCount(accepted);
             setTotalAcceptedMilliseconds(acceptedMilliseconds);
             setHistogram({ ...counts });
+            if (newMatches.length > 0) {
+              setMatchingFinalGrids((grids) => [...grids, ...newMatches]);
+              flushedMatches = matches.length;
+            }
             await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
           }
         }
 
+        const remainingMatches = matches.slice(flushedMatches);
         setTrialsProcessed(completedTrials);
         setAcceptedCount(accepted);
         setTotalAcceptedMilliseconds(acceptedMilliseconds);
         setHistogram({ ...counts });
-        setMatchingFinalGrids(matches);
+        if (remainingMatches.length > 0) setMatchingFinalGrids((grids) => [...grids, ...remainingMatches]);
         setStatus(haltRequested.current
           ? `Simulation halted after ${completedTrials.toLocaleString()} trials. ${accepted.toLocaleString()} final grids met the ${maximumPencilmarked}-cell limit.`
           : `Finished ${trialLimit.toLocaleString()} trials. ${accepted.toLocaleString()} final grids had at most ${maximumPencilmarked} pencilmarked cells.`);
@@ -437,8 +444,8 @@ function SimulationPage() {
       </section>
 
       <section className="simulation-histogram-section" aria-labelledby="histogram-title">
-        <h3 id="histogram-title">Pencilmarked-cell histogram</h3>
-        <p>Each vertical bar counts accepted final grids with that many pencilmarked cells.</p>
+        <h3 id="histogram-title">Number-of-givens histogram</h3>
+        <p>Each vertical bar tallies every generated final grid with that many Pencilmarked givens. Only counts observed during this run are shown.</p>
         <div className="simulation-histogram" role="img" aria-label="Histogram of pencilmarked cells in accepted final grids">
           {bins.map((count) => {
             const value = histogram[count] ?? 0;
@@ -453,7 +460,7 @@ function SimulationPage() {
 
       {matchingFinalGrids.length > 0 && <section className="simulation-final-preview" aria-labelledby="simulation-final-title">
         <h3 id="simulation-final-title">Qualifying final grids</h3>
-        <p>All {matchingFinalGrids.length.toLocaleString()} displayed items meet the selected maximum of {maximumPencilmarked} pencilmarked cells. Expand an item to inspect its grid.</p>
+        <p>{isRunning ? `${matchingFinalGrids.length.toLocaleString()} qualifying grids found so far` : `All ${matchingFinalGrids.length.toLocaleString()} qualifying grids`} meet the selected maximum of {maximumPencilmarked} pencilmarked cells. Expand an item to inspect its grid.</p>
         <ol className="simulation-grid-list">
           {matchingFinalGrids.map((grid, index) => {
             const expanded = Boolean(expandedMatchingGrids[index]);
