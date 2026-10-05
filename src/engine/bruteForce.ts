@@ -141,6 +141,33 @@ export function solve(g: Grid): Grid | null {
   return res && isSolved(res) ? res : null;
 }
 
+/**
+ * Return up to `limit` completed solution grids. This is useful when the UI
+ * needs to show why a Pencilmark grid is ambiguous, rather than merely
+ * reporting a capped solution count.
+ */
+export function solveMany(g: Grid, limit = 2): Grid[] {
+  const solutions: Grid[] = [];
+  const rec = (grid: Grid): void => {
+    if (!propagate(grid) || solutions.length >= limit) return;
+    const cell = findBestCell(grid);
+    if (cell === -1) {
+      if (isSolved(grid)) solutions.push(grid);
+      return;
+    }
+    let mask = grid.cands[cell];
+    while (mask && solutions.length < limit) {
+      const low = mask & -mask;
+      mask &= mask - 1;
+      const next = cloneGrid(grid);
+      setValue(next, cell, 32 - Math.clz32(low));
+      rec(next);
+    }
+  };
+  rec(cloneGrid(g));
+  return solutions;
+}
+
 /** True iff the grid has at least one solution. */
 export function isSolvable(g: Grid): boolean {
   return solve(g) !== null;

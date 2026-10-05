@@ -175,9 +175,13 @@ export const TECHS = {
 
 export type Tech = keyof typeof TECHS;
 
-/** Techniques in HoDoKu search order (implemented + enabled only). */
+/**
+ * Techniques in the temporarily restricted walkthrough search order.
+ * Everything after Wings is intentionally disabled: if no listed technique
+ * applies, the solver records a deterministic Brute Force placement instead.
+ */
 export const SOLVE_ORDER: Tech[] = (Object.keys(TECHS) as Tech[])
-  .filter((k) => TECHS[k].implemented && TECHS[k].enabled)
+  .filter((k) => TECHS[k].implemented && TECHS[k].enabled && TECHS[k].index <= TECHS.WXYZ_WING.index)
   .sort((a, b) => TECHS[a].index - TECHS[b].index);
 
 /**

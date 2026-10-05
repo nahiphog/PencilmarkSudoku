@@ -170,7 +170,7 @@ export interface Rating {
   steps: Step[];
   /** technique -> occurrence count */
   techniques: Partial<Record<Tech, number>>;
-  solvable: boolean; // solvable with implemented techniques (no brute force)
+  solvable: boolean; // solvable with enabled techniques and deterministic brute force fallback
 }
 
 /**
@@ -222,7 +222,7 @@ export function ratePuzzle(
   let score = 0;
   let level: Level = 'Beginner';
   let hardSteps = 0;
-  let solvable = true;
+  const solvable = true;
   const maxLevelIndex = limit?.maxLevel ? LEVELS.indexOf(limit.maxLevel) : -1;
   const cleanIndex = limit?.cleanTech ? TECHS[limit.cleanTech].index : -1;
   let cleanSeen = false;
@@ -231,8 +231,9 @@ export function ratePuzzle(
     if (isBroken(g)) return null;
     let step = findNextStep(g, order);
     if (!step) {
-      // brute-force fallback: place one digit from the real solution
-      solvable = false;
+      // The restricted solver deliberately stops after Wings. Continue by
+      // placing the correct value in the first empty cell; each such step is
+      // catalogued as BRUTE_FORCE and contributes 10,000 rating points.
       let cell = -1;
       for (let c = 0; c < 81; c++) {
         if (g.values[c] === 0) {

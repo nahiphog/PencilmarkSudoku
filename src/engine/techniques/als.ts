@@ -117,7 +117,7 @@ function wxyzStep(g: Grid, A: Als, B: Als, x: number, z: number, elims: CellDigi
       ...(rest.length > 0 && { secondary: rest.length === 1 ? 'other cell of the three' : 'other cells of the three' }),
       fins: 'bivalue cell'
     },
-    description: `WXYZ-Wing: bivalue cell ${name} (${digitsOf(g.cands[linked]).join('')}) and the three cells ${and(three)} in ${unit}, which hold ${digitsOf(set.mask).join('')} between them. The ${x} in ${name} sees every ${x} in the three cells. Either ${name} is ${z}, or it is ${x} and the three cells in ${unit} must be ${and(others)}. At least one of the four cells is therefore ${z}, so ${z} is removed from every other cell that sees all the ${z}s among them.`
+    description: `WXYZ-Wing: ${name} is the bivalue apex (${digitsOf(g.cands[linked]).join('')}). It is paired with the three-cell almost-locked set ${and(three)} in ${unit}, whose combined candidates are ${digitsOf(set.mask).join('')}. The important restricted digit is ${x}: the ${x} in ${name} sees every occurrence of ${x} in that three-cell set. Consider the two possibilities for ${name}. If it is ${z}, the conclusion is immediate. If it is ${x}, every ${x} in the three-cell set is excluded, so the set must resolve using ${and(others)} and at least one member of it must be ${z}. Either way, one of these four wing cells is ${z}. Remove ${z} from any outside cell that sees every highlighted ${z} candidate.`
   };
 }
 

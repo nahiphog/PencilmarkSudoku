@@ -54,7 +54,7 @@ export function findXYWing(g: Grid): Step | null {
           primary: [{ cell: pivot, digit: x }, { cell: pivot, digit: y }],
           secondary: [{ cell: w1, digit: z }, { cell: w2, digit: z }],
           labels: { primary: 'pivot', secondary: 'pincers' },
-          description: `XY-Wing: pivot ${cellName(pivot)} (${x}${y}) with pincers ${cellName(w1)} (${x}${z}) and ${cellName(w2)} (${y}${z}); one pincer must be ${z}, so ${z} is removed from cells seeing both.`
+          description: `XY-Wing: ${cellName(pivot)} is the pivot and contains only ${x} or ${y}. It sees two bivalue pincers: ${cellName(w1)} (${x}${z}) and ${cellName(w2)} (${y}${z}). If the pivot is ${x}, ${cellName(w2)} cannot use ${y} and must be ${z}; if the pivot is ${y}, ${cellName(w1)} cannot use ${x} and must be ${z}. Therefore at least one pincer is ${z} in every case. Any cell that sees both pincers cannot also be ${z}, so remove ${z} from those shared-peer cells.`
         };
       }
     }
@@ -90,7 +90,7 @@ export function findXYZWing(g: Grid): Step | null {
             { cell: wings[j], digit: z }
           ],
           labels: { primary: 'pivot', secondary: 'pincers' },
-          description: `XYZ-Wing: pivot ${cellName(pivot)} (${digitsOf(pivotMask).join('')}) with pincers ${cellName(wings[i])} (${digitsOf(g.cands[wings[i]]).join('')}) and ${cellName(wings[j])} (${digitsOf(g.cands[wings[j]]).join('')}). Whichever digit the pivot takes, one of the three cells is ${z}, so ${z} is removed from every cell that sees all three.`
+          description: `XYZ-Wing: ${cellName(pivot)} is the three-candidate pivot (${digitsOf(pivotMask).join('')}); its two pincers are ${cellName(wings[i])} (${digitsOf(g.cands[wings[i]]).join('')}) and ${cellName(wings[j])} (${digitsOf(g.cands[wings[j]]).join('')}). The pincers share ${z}, and together their candidates reproduce the pivot's three digits. If the pivot takes either non-${z} digit, the matching pincer is forced to ${z}; if the pivot itself takes ${z}, the conclusion is already true. Thus one of these three cells must contain ${z}. A cell seeing the pivot and both pincers cannot contain ${z}, so eliminate ${z} there.`
         };
       }
     }
@@ -156,7 +156,7 @@ export function findWWing(g: Grid): Step | null {
                   ]
               ).map((cd) => [cd])
             ),
-            description: `W-Wing: ${cellName(A)} and ${cellName(B)} both hold ${x}${y}; the strong link on ${linkDigit} (${cellName(e1)}–${cellName(e2)}) forces one of them to be ${elimDigit}, removing ${elimDigit} from cells seeing both.`
+            description: `W-Wing: ${cellName(A)} and ${cellName(B)} are matching bivalue cells, each containing ${x} and ${y}. They do not see one another, but they are connected by the strong link on ${linkDigit} between ${cellName(e1)} and ${cellName(e2)}: exactly one endpoint must be ${linkDigit}. Follow the two branches. If ${cellName(A)} is not ${elimDigit}, it is ${linkDigit}, which forces the linked endpoint and in turn forces ${cellName(B)} to ${elimDigit}; the opposite branch forces ${cellName(A)} to ${elimDigit}. Therefore one of the two wing cells is always ${elimDigit}. Any cell seeing both wing cells cannot also be ${elimDigit}, so remove it from those common peers.`
           };
         }
       }
