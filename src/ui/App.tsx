@@ -745,7 +745,7 @@ function ImportGridPage({ notationFormat }: { notationFormat: 'positions' | 'com
           <h3>Imported Pencilmark grid</h3>
           <span className="difficulty-pill">{summary.level} · {summary.score} pts</span>
         </div>
-        <NotationGrid state={states[walkthroughStep]} notationMasks={notationMasks} notationFormat="positions" label="Imported Pencilmark Sudoku grid" forceFullNotation={walkthroughStep === 1} addedNotationMasks={addedNotationMasks} />
+        <NotationGrid state={states[walkthroughStep]} notationMasks={notationMasks} notationFormat={walkthroughStep === 0 ? 'compact' : 'positions'} label="Imported Pencilmark Sudoku grid" forceFullNotation={walkthroughStep === 1} addedNotationMasks={addedNotationMasks} />
         <CopyEncodingButton pencilmarkGrid={imported.pencilmarkGrid} emptyCells={imported.emptyCells} />
         <section className="walkthrough" aria-labelledby="import-walkthrough-title">
           <h3 id="import-walkthrough-title">Solution walkthrough</h3>
@@ -912,7 +912,7 @@ function BuildPuzzlePage({ notationFormat }: { notationFormat: 'positions' | 'co
             </div>
           </div>
           {expandedGrids.final && <>
-            <NotationGrid state={finalState} notationMasks={finalMasks} notationFormat="positions" label="Built final Pencilmark Sudoku grid" forceFullNotation={walkthroughStep === 1} addedNotationMasks={addedNotationMasks} />
+            <NotationGrid state={finalState} notationMasks={finalMasks} notationFormat={walkthroughStep === 0 ? 'compact' : 'positions'} label="Built final Pencilmark Sudoku grid" forceFullNotation={walkthroughStep === 1} addedNotationMasks={addedNotationMasks} />
             <section className="walkthrough" aria-labelledby="build-walkthrough-title">
               <h3 id="build-walkthrough-title">Solution walkthrough</h3>
               <article className="walkthrough-slide" aria-live="polite">
@@ -1066,7 +1066,7 @@ export default function App() {
             <p>
               Dual-cell dug from the Pencilmark grid: {81 - puzzle.emptyCells.filter(Boolean).length} of 81 cells are pencilmarked in 180°-rotationally symmetric pairs, while the puzzle still has exactly one solution.
             </p>
-            <NotationGrid state={currentGrid} notationMasks={currentNotationMasks} notationFormat="positions" label="Dug final Pencilmark Sudoku grid" forceFullNotation={walkthroughStep === 1} addedNotationMasks={currentAddedNotationMasks} />
+            <NotationGrid state={currentGrid} notationMasks={currentNotationMasks} notationFormat={walkthroughStep === 0 ? 'compact' : 'positions'} label="Dug final Pencilmark Sudoku grid" forceFullNotation={walkthroughStep === 1} addedNotationMasks={currentAddedNotationMasks} />
 
             <section className="walkthrough" aria-labelledby="walkthrough-title">
               <h2 id="walkthrough-title">Solution walkthrough</h2>
