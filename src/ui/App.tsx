@@ -138,6 +138,19 @@ function digPencilmarkGrid(pencilmarkGrid: Pencilmark[]) {
   return emptyCells;
 }
 
+/** Dig individual cells while preserving exactly one solution. */
+function digPencilmarkGridSingleCell(pencilmarkGrid: Pencilmark[]) {
+  const emptyCells = Array<boolean>(81).fill(false);
+  for (const cell of randomOrder()) {
+    const trial = [...emptyCells];
+    trial[cell] = true;
+    if (countSolutions(solverGrid(pencilmarkGrid, trial), 2) === 1) {
+      emptyCells[cell] = true;
+    }
+  }
+  return emptyCells;
+}
+
 function summarizeRating(rating: Rating, walkthroughStepOffset = 0): RatingSummary {
   const stepNumbers = new Map<Tech, number[]>();
   rating.steps.forEach((step, index) => {
@@ -260,7 +273,7 @@ function generatePuzzlePair(): GeneratedPuzzle {
   throw new Error('Unable to generate a Pencilmark grid. Please try again.');
 }
 
-/** Generate one dual-cell-dug final grid for the simulation sampler. */
+/** Generate one single-cell-dug final grid for the simulation sampler. */
 function generateSimulationTrial() {
   const completedGrid = Array.from(generateFullGrid().values);
   const pencilmarkGrid: Pencilmark[] = completedGrid.map((solution) => {
@@ -268,7 +281,7 @@ function generateSimulationTrial() {
     while (alternative === solution) alternative = Math.floor(Math.random() * 9) + 1;
     return [solution, alternative];
   });
-  const emptyCells = digPencilmarkGrid(pencilmarkGrid);
+  const emptyCells = digPencilmarkGridSingleCell(pencilmarkGrid);
   return { pencilmarkGrid, emptyCells, pencilmarkedCells: 81 - emptyCells.filter(Boolean).length };
 }
 
@@ -324,7 +337,8 @@ function formatAverageGenerationTime(milliseconds: number) {
 
 function SimulationPage() {
   const [trialLimit, setTrialLimit] = useState(10);
-  const [maximumPencilmarked, setMaximumPencilmarked] = useState(38);
+  const [displayCondition, setDisplayCondition] = useState<'at-most' | 'exactly'>('at-most');
+  const [pencilmarkedTarget, setPencilmarkedTarget] = useState(38);
   const [isRunning, setIsRunning] = useState(false);
   const [trialsProcessed, setTrialsProcessed] = useState(0);
   const [acceptedCount, setAcceptedCount] = useState(0);
@@ -332,12 +346,15 @@ function SimulationPage() {
   const [histogram, setHistogram] = useState<Record<number, number>>({});
   const [matchingFinalGrids, setMatchingFinalGrids] = useState<SimulationFinalGrid[]>([]);
   const [expandedMatchingGrids, setExpandedMatchingGrids] = useState<Record<number, boolean>>({});
-  const [status, setStatus] = useState('Choose a trial count and a maximum number of pencilmarked cells.');
+  const [status, setStatus] = useState('Choose a trial count and a Pencilmarked-cell display condition.');
   const haltRequested = useRef(false);
 
   const bins = Object.keys(histogram).map(Number).sort((a, b) => a - b);
   const largestBin = Math.max(1, ...bins.map((count) => histogram[count] ?? 0));
   const averageMilliseconds = acceptedCount === 0 ? 0 : totalAcceptedMilliseconds / acceptedCount;
+  const displayRequirement = displayCondition === 'exactly'
+    ? `exactly ${pencilmarkedTarget} pencilmarked cells`
+    : `at most ${pencilmarkedTarget} pencilmarked cells`;
 
   const runSimulation = () => {
     setIsRunning(true);
@@ -348,7 +365,7 @@ function SimulationPage() {
     setMatchingFinalGrids([]);
     setExpandedMatchingGrids({});
     haltRequested.current = false;
-    setStatus(`Generating ${trialLimit.toLocaleString()} dual-cell-dug final grids…`);
+    setStatus(`Generating ${trialLimit.toLocaleString()} single-cell-dug final grids…`);
 
     window.setTimeout(() => {
       void (async () => {
@@ -368,7 +385,10 @@ function SimulationPage() {
           completedTrials = trial;
           counts[generated.pencilmarkedCells] = (counts[generated.pencilmarkedCells] ?? 0) + 1;
 
-          if (generated.pencilmarkedCells <= maximumPencilmarked) {
+          const matchesDisplayRequirement = displayCondition === 'exactly'
+            ? generated.pencilmarkedCells === pencilmarkedTarget
+            : generated.pencilmarkedCells <= pencilmarkedTarget;
+          if (matchesDisplayRequirement) {
             accepted++;
             acceptedMilliseconds += elapsed;
             matches.push(generated);
@@ -395,8 +415,8 @@ function SimulationPage() {
         setHistogram({ ...counts });
         if (remainingMatches.length > 0) setMatchingFinalGrids((grids) => [...grids, ...remainingMatches]);
         setStatus(haltRequested.current
-          ? `Simulation halted after ${completedTrials.toLocaleString()} trials. ${accepted.toLocaleString()} final grids met the ${maximumPencilmarked}-cell limit.`
-          : `Finished ${trialLimit.toLocaleString()} trials. ${accepted.toLocaleString()} final grids had at most ${maximumPencilmarked} pencilmarked cells.`);
+          ? `Simulation halted after ${completedTrials.toLocaleString()} trials. ${accepted.toLocaleString()} final grids had ${displayRequirement}.`
+          : `Finished ${trialLimit.toLocaleString()} trials. ${accepted.toLocaleString()} final grids had ${displayRequirement}.`);
         setIsRunning(false);
       })();
     }, 0);
@@ -415,7 +435,7 @@ function SimulationPage() {
     <section className="completed-grid-card simulation-page" aria-labelledby="simulation-page-title">
       <p className="eyebrow">Sampling lab</p>
       <h2 id="simulation-page-title">Simulation</h2>
-      <p className="grid-description">Generate dual-cell-dug final grids, retain only those at or below the chosen Pencilmark-cell limit, and inspect their distribution.</p>
+      <p className="grid-description">Generate single-cell-dug final grids, display those matching your Pencilmark-cell requirement, and inspect the distribution from every trial.</p>
 
       <section className="simulation-settings" aria-label="Simulation settings">
         <label>
@@ -425,10 +445,28 @@ function SimulationPage() {
           </select>
         </label>
         <label>
-          At most pencilmarked cells
-          <select value={maximumPencilmarked} disabled={isRunning} onChange={(event) => setMaximumPencilmarked(Number(event.target.value))}>
-            {Array.from({ length: 19 }, (_, index) => index + 20).map((cells) => <option key={cells} value={cells}>{cells}</option>)}
+          Display condition
+          <select value={displayCondition} disabled={isRunning} onChange={(event) => setDisplayCondition(event.target.value as 'at-most' | 'exactly')}>
+            <option value="at-most">At most Z cells</option>
+            <option value="exactly">Exactly Z cells</option>
           </select>
+        </label>
+        <label>
+          {displayCondition === 'exactly' ? 'Exactly Z pencilmarked cells' : 'At most Z pencilmarked cells'}
+          {displayCondition === 'exactly' ? (
+            <input
+              type="number"
+              min="0"
+              max="81"
+              value={pencilmarkedTarget}
+              disabled={isRunning}
+              onChange={(event) => setPencilmarkedTarget(Math.min(81, Math.max(0, Number(event.target.value) || 0)))}
+            />
+          ) : (
+            <select value={pencilmarkedTarget} disabled={isRunning} onChange={(event) => setPencilmarkedTarget(Number(event.target.value))}>
+              {Array.from({ length: 19 }, (_, index) => index + 20).map((cells) => <option key={cells} value={cells}>{cells}</option>)}
+            </select>
+          )}
         </label>
         <div className="simulation-actions">
           <button className="generate-grid-button" onClick={runSimulation} disabled={isRunning}>Run simulation</button>
@@ -460,7 +498,7 @@ function SimulationPage() {
 
       {matchingFinalGrids.length > 0 && <section className="simulation-final-preview" aria-labelledby="simulation-final-title">
         <h3 id="simulation-final-title">Qualifying final grids</h3>
-        <p>{isRunning ? `${matchingFinalGrids.length.toLocaleString()} qualifying grids found so far` : `All ${matchingFinalGrids.length.toLocaleString()} qualifying grids`} meet the selected maximum of {maximumPencilmarked} pencilmarked cells. Expand an item to inspect its grid.</p>
+        <p>{isRunning ? `${matchingFinalGrids.length.toLocaleString()} qualifying grids found so far` : `All ${matchingFinalGrids.length.toLocaleString()} qualifying grids`} have {displayRequirement}. Expand an item to inspect its grid.</p>
         <ol className="simulation-grid-list">
           {matchingFinalGrids.map((grid, index) => {
             const expanded = Boolean(expandedMatchingGrids[index]);

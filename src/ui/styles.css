@@ -2506,7 +2506,7 @@ kbd {
 
 .simulation-settings {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: end;
   gap: 12px;
   margin-top: 26px;
@@ -2524,7 +2524,8 @@ kbd {
   font-weight: 700;
 }
 
-.simulation-settings select {
+.simulation-settings select,
+.simulation-settings input {
   width: 100%;
   min-height: 42px;
   padding: 0 10px;
